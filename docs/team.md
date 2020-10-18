@@ -6,11 +6,11 @@ title:  Team
 # {{ page.title }}
 
 
-## USER 1
-***UCI Net ID***: ucinetid1
+## Michael Joonhyung Yoo
+***UCI Net ID***: yoomj1@uci.edu
 
-## USER 2
-***UCI Net ID***: ucinetid2
+## Nuo Xu
+***UCI Net ID***: nxu5@uci.edu
 
 ## USER 3
 ***UCI Net ID***: ucinetid3
