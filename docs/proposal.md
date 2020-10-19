@@ -3,7 +3,7 @@ layout: default
 title: Proposal
 ---
 
-## Summary of Project ##
+## Summary of the Project ##
 
 In light of the COVID-19 situation in the real world, and the rising popularity of food delivery services, this project (MineEats) will simulate food delivery in a city by using an agent to deliver to customers in different locations of the city. The agent will decide which orders should be delivered first based on the time it takes and the distance to the destination. The input to the agent will be the number and location of the customers, their order times, number of orders, and a restaurant location (to figure out the distance to pick up the order and distance to deliver the order). The goal of this project is to find the best way to deliver food in the shortest time and distance.
 
