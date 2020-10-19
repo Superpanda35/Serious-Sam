@@ -12,5 +12,5 @@ title:  Team
 ## Nuo Xu
 ***UCI Net ID***: nxu5@uci.edu
 
-## USER 3
-***UCI Net ID***: ucinetid3
+## Niva Ranavat
+***UCI Net ID***: nranavat@uci.edu
