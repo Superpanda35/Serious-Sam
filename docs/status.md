@@ -28,3 +28,4 @@ https://eg.bucknell.edu/~cld028/courses/379-FA19/MalmoDocs/classmalmo_1_1_missio
 https://microsoft.github.io/malmo/0.17.0/Python_Examples/Tutorial.pdf <br />
 https://tsmatz.wordpress.com/2020/07/09/minerl-and-malmo-reinforcement-learning-in-minecraft/ <br />
 https://microsoft.github.io/malmo/0.14.0/Schemas/Mission.html#element_Weather <br />
+https://towardsdatascience.com/simple-reinforcement-learning-q-learning-fcddc4b6fe56
