@@ -3,7 +3,7 @@ layout: default
 title:  Home
 ---
 
-Source code: https://noahnuoxu.github.io/WallClimber/ (_fix this_)
+Source code: https://github.com/NoahNuoXu/Serious-Sam
 
 Reports:
 
