@@ -5,8 +5,8 @@ title: Status
 
 ## Project Summary ##
 
-
-
+  Our hero Sam will fight with zombies in a 16x16 place. The difference between our Sam and Sam who in the video game is that our Sam is using golden sword to fight. Even though Sam is not be able to move around, he still can aim the cloest target to deal damage. In the future, Sam will move and turn around to deal zombies from all directions. We will expalin in detail in the Remainning Goals and Challenges section.
+  
 ## Approach ##
 
 
