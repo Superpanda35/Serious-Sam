@@ -25,7 +25,7 @@ If we can do all of these above, maybe we can try different enemies like witches
 
 build_test.py, mob_fun.py, tabular_q_learning.py and moving_target_test.py from Canvas page.
 
-https://eg.bucknell.edu/~cld028/courses/379-FA19/MalmoDocs/classmalmo_1_1_mission_spec-members.html
-https://microsoft.github.io/malmo/0.17.0/Python_Examples/Tutorial.pdf
-https://tsmatz.wordpress.com/2020/07/09/minerl-and-malmo-reinforcement-learning-in-minecraft/
-https://microsoft.github.io/malmo/0.14.0/Schemas/Mission.html#element_Weather
+https://eg.bucknell.edu/~cld028/courses/379-FA19/MalmoDocs/classmalmo_1_1_mission_spec-members.html 
+https://microsoft.github.io/malmo/0.17.0/Python_Examples/Tutorial.pdf 
+https://tsmatz.wordpress.com/2020/07/09/minerl-and-malmo-reinforcement-learning-in-minecraft/ 
+https://microsoft.github.io/malmo/0.14.0/Schemas/Mission.html#element_Weather 
