@@ -31,13 +31,13 @@ Qualitative:
 - Once we see our Serious Sam fighting off Zombies by timing his sword strikes and walking towards the Zombies
 <img src="./images/Screen_Shot_2020-11-13_at_2.54.48_PM.png"
      alt="Screenshot of Sam fighting Zombies"
-     style="float: left;" />
+     style="float: left; width:100%;" />
 
 Quantitative:
 - In terms of Quantitative results, we would like to see the graph of results on an upward trend as the steps go up. Currently, the results are not positive in correlation with the number of steps.
 <img src="./images/returns.png"
      alt="Zombie Killer graph"
-     style="float: left; margin-right:auto;" />
+     style="float: left; margin-right:100;" />
 
 
 ## Remaining Goals and Challenges ##
