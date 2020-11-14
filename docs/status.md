@@ -5,7 +5,7 @@ title: Status
 
 ## Project Summary ##
 
-  Our hero Sam will fight with zombies in a 16x16 place. The difference between our Sam and Sam who in the video game is that our Sam is using golden sword to fight. Even though Sam is not be able to move around, he still can aim the cloest target to deal damage. In the future, Sam will move and turn around to deal zombies from all directions. We will expalin in detail in the Remainning Goals and Challenges section.
+  Our hero Sam will fight with zombies in a 16x16 place. The difference between our Sam and Sam who in the video game is that our Sam is using golden sword to fight. Sam is able to  move and turn around to deal damage and try to kill all the zombies from all directions. Under 20 seconds limit, Sam will try to kill all the enemies while avoiding as less damage as possible. 
   
 ## Approach ##
 
@@ -18,7 +18,7 @@ title: Status
 
 ## Remaining Goals and Challenges ## 
 
-  For the update version in the future, we expect our hero Sam will be able to move around for dodging the attacks from the enemies. Moreover, the enemies will spawn randomly in the map. For answering this, we need to make Sam not only to move around but also turn around to see which one of the enemies is closer to him, and then attack the enemy. We need to update the equations for the distance and angle to achieve these. Also, we need to fix the reward system in our code since the reward is not quite accuracy at this moment. 
+  For the update version in the future, we expect our hero Sam will be able to move and turn around faster for dodging the attacks from the enemies. Moreover, Sam's attacking timing is also need to be improved; so, Sam can deal more damage to kill enemies. the enemies will spawn randomly in the map. For answering this, we need to improve our Q table, angle and choosing target functions to make the situation better. For instance, which direction should the agent turn, which way has less enemies, avoiding to get knock back into walls or corners and attack faster and more accuracy.
 If we can do all of these above, maybe we can try different enemies like witches who can fly in the air; so, Sam should switch weapon like bow to shoot witches. 
 
 ## Resources Used ##
