@@ -7,8 +7,9 @@ title: Status
 
   Our hero Sam will fight with zombies in a 16x16 arena. The difference between our Sam and Sam who in the video game is that our Sam is using golden sword to fight. Sam is able to  move and turn around to deal damage and try to kill all the zombies from all directions. Under 20 seconds limit, Sam will try to kill all the enemies while avoiding as less damage as possible. 
   
-Current situation video:
-https://youtu.be/bhiMuO7yud4
+Current situation video:<br />
+<iframe width="560" height="315" src="https://www.youtube.com/embed/bhiMuO7yud4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ## Approach ##
 
 
