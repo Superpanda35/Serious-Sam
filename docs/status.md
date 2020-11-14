@@ -37,7 +37,7 @@ Quantitative:
 - In terms of Quantitative results, we would like to see the graph of results on an upward trend as the steps go up. Currently, the results are not positive in correlation with the number of steps.
 <img src="./images/returns.png"
      alt="Zombie Killer graph"
-     style="float: left;" />
+     style="float: left; margin-right:auto;" />
 
 
 ## Remaining Goals and Challenges ##
