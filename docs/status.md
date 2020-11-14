@@ -23,14 +23,15 @@ Current situation video:<br />
 - To enforce that Sam tries harder to stay alive, the reward for dying is -1000. If Sam was able to attack a Zombie, it will receive +100. Lastly, if Sam was just running away and not killing the Zombies, causing the timer to run out, we gave it -10 points. We are still experimenting with the reward function, because Sam dies often, causing it too see positive reward less. For example, we are trying to add negative reward for every action taken, so Sam will learn to strategize and kill the Zombies faster.
 
 
-
-
-
-
 ## Evaluation ##
 
+Qualitative:
+- Once we see our Serious Sam fighting off Zombies by timing his sword strikes and walking towards the Zombies
+![Screenshot of Code Running] (./images/Screen_Shot_1010-11-13_at_2.54.48_PM.png)
 
-
+Quantitative:
+- In terms of Quantitative results, we would like to see the graph of results on an upward trend as the steps go up. Currently, the results are not positive in correlation with the number of steps.
+![Zombie Killer Graph] (./images/returns.png)
 
 
 ## Remaining Goals and Challenges ##
