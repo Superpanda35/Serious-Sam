@@ -16,6 +16,8 @@ Current situation video:<br />
 
 - Serious Sam, based on a game, will utilize deep reinforcement learning, specifically the Q-learning algorithm to make itself smarter. Though Q-learning on it's own is a powerful algorithm, Serious Sam has a lot of different state-action pairs which make it easier to incorporate deep learning. Sam, our agent, starts off with a Q-network and a Target Network that each has one hidden layer and uses linear regression algorithm to calculate the Q-values. Sam will continue to update the Q-network until it either dies or the episode has maxed on the number of steps it can take.
 
+-
+
 - Originally, Sam starts taking epsilon-greedy actions to ensure that Sam explores properly. As our epsilon value decreases, Sam starts to take actions that have a higher Q-value, that allows it to exploit higher reward actions more. Epsilon starts with a value of 1 and decreases by 0.999 each episode run.
 
 - Currently, Sam can take four actions: move forward, turn left, turn right, or attack.
@@ -27,11 +29,15 @@ Current situation video:<br />
 
 Qualitative:
 - Once we see our Serious Sam fighting off Zombies by timing his sword strikes and walking towards the Zombies
-![Screenshot of Code Running] (./images/Screen_Shot_1010-11-13_at_2.54.48_PM.png)
+<img src="./images/Screen_Shot_2020-11-13_at_2.54.48_PM.png"
+     alt="Screenshot of Sam fighting Zombies"
+     style="float: left;" />
 
 Quantitative:
 - In terms of Quantitative results, we would like to see the graph of results on an upward trend as the steps go up. Currently, the results are not positive in correlation with the number of steps.
-![Zombie Killer Graph] (./images/returns.png)
+<img src="./images/returns.png"
+     alt="Zombie Killer graph"
+     style="float: left;" />
 
 
 ## Remaining Goals and Challenges ##
