@@ -71,14 +71,14 @@ def main():
     #have the first layer of the DQN be the flattened size of the observation
 
     agent = Agent(alpha=LEARNING_RATE, gamma = GAMMA, epsilon = epsilon,
-                  input_dims = [OBS_SIZE,OBS_SIZE],batch_size = BATCH_SIZE,
+                  input_dims = (OBS_SIZE,OBS_SIZE),batch_size = BATCH_SIZE,
                   n_actions = len(ACTION_DICT), max_mem_size = 100000, eps_end = MIN_EPSILON,
                   eps_dec = EPSILON_DECAY)
 
 
 
     #create the Malmo world environment
-    world = World(size = SIZE, obs_size = OBS_SIZE, num_entities = 5)
+    world = World(size = SIZE, obs_size = OBS_SIZE, num_entities = 5, episodes = MAX_EPISODE_STEPS)
 
     # Init vars
     global_step = 0
@@ -109,11 +109,11 @@ def main():
 
         #get the first observation
         obs , zombies_count , health = world.get_observation()
-
+        death = False
         # Run the episode
         while world.is_mission_running:
-            print(".", end="")
-            time.sleep(0.1)
+            # print(".", end="")
+            # time.sleep(0.1)
 
             # Get action
             action_idx = agent.choose_action(obs)
@@ -124,7 +124,7 @@ def main():
             agent_host.sendCommand(command)
 
             # If your agent isn't registering reward you may need to increase this
-            time.sleep(2)
+            time.sleep(0.1)
 
             episode_step += 1
 
@@ -134,9 +134,12 @@ def main():
             # 3. episode has take maximum steps
             if zombies_count == 0 or health == 0 or episode_step >= MAX_EPISODE_STEPS:
                 done = True
+                if episode_step >= MAX_EPISODE_STEPS:
+                    agent_host.sendCommand("quit")
                 time.sleep(2)
 
-
+            if health == 0:
+                death = True
             # Get next observation
             world_state = world.get_world_state()
 
@@ -146,7 +149,7 @@ def main():
             next_obs, zombies_count, health = world.get_observation()
 
             # Get reward
-            reward = world.get_reward()
+            reward = world.get_reward(death, episode_steps = episode_step)
             episode_return += reward
 
             # Store step in replay buffer
@@ -158,6 +161,8 @@ def main():
             global_step += 1
             if global_step > START_TRAINING and global_step % LEARN_FREQUENCY == 0:
                 loss = agent.learn()
+                if loss == None:
+                    loss = 0
                 episode_loss += loss
 
 

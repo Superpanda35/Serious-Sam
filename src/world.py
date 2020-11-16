@@ -15,10 +15,11 @@ class World:
     Create the Malmo environment for a fight arena filled with zombies
     """
 
-    def __init__(self, size, obs_size,num_entities):
+    def __init__(self, size, obs_size,num_entities, episodes = 100):
         self.size = size
         self.obs_size = obs_size
         self.num_entities = num_entities
+        self.episodes = episodes
 
         # Create default Malmo objects:
 
@@ -103,7 +104,6 @@ class World:
                                 self.drawEntity("Zombie") + '''
                         </DrawingDecorator>
 
-                      <ServerQuitFromTimeUp timeLimitMs="15000"/>
                       <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
                   </ServerSection>
@@ -121,9 +121,6 @@ class World:
                         <RewardForDamagingEntity>
                             <Mob type="Zombie" reward="100"/>
                         </RewardForDamagingEntity>
-                        <RewardForMissionEnd rewardForDeath="-1000">
-                            <Reward description ="out_of_time" reward="-100"/>
-                        </RewardForMissionEnd>
                         <ObservationFromGrid>
                                 <Grid name="floorAll">
                                     <min x="-''' + str(int(self.obs_size / 2)) + '''" y="-1" z="-''' + str(
@@ -136,7 +133,8 @@ class World:
                             <Range name="entities" xrange="100" yrange="2" zrange="100" update_frequency="1"/>
                         </ObservationFromNearbyEntities>
                       <ObservationFromFullStats/>
-                      <ContinuousMovementCommands turnSpeedDegs="120"/>
+                      <DiscreteMovementCommands/>
+                      <AgentQuitFromReachingCommandQuota total="'''+str(self.episodes)+'''" />
                     </AgentHandlers>
                   </AgentSection>
                 </Mission>'''
@@ -180,7 +178,7 @@ class World:
 
         return self.world_state
 
-    def get_reward(self):
+    def get_reward(self, death, episode_steps):
         """
 
         :return: integer of the reward the agent received
@@ -192,7 +190,10 @@ class World:
             if add == 100:
                 print("hit zombie")
             reward += add
-
+        if death:
+            reward += -1000
+        if episode_steps >= self.episodes:
+            reward += -100
         return reward
 
 
@@ -209,7 +210,7 @@ class World:
             observation: a 2d array
         """
         #only look a obs_size by obs_sive around the agent
-        obs = np.zeros((self.obs_size, self.obs_size))
+        obs = np.zeros((self.obs_size, self.obs_size), dtype = np.float32)
         count = 0
         life = 0
 
@@ -224,19 +225,19 @@ class World:
                 msg = self.world_state.observations[-1].text
                 observations = json.loads(msg)
                 #print("observations", observations)
-                #print("observations full stats", observations['DamageTaken'], observations['Life'])
+                #print("observations full stats", observations[u'Life'])
 
                 # current location of the agent
                 # which will be center of the observation matrix
-                xpos, ypos, zpos = observations['XPos'], observations['YPos'], observations['ZPos']
-                yaw = observations['Yaw']
-                life = observations['Life']
-                #print("current", xpos,zpos)
+                xpos, ypos, zpos = observations[u'XPos'], observations[u'YPos'], observations[u'ZPos']
+                yaw = observations[u'Yaw']
+                life = observations[u'Life']
+                #print("current", xpos,zpos, yaw)
 
                 halfway = self.obs_size//2
 
                 # Get observation with location of all the zombies
-                entities = observations['entities']
+                entities = observations[u'entities']
                 #print("entitites", entities)
                 for e in entities:
 
@@ -244,11 +245,12 @@ class World:
                         count += 1
                         x = int(e['x'])
                         z = int(e['z'])
-                        #print("zombie location",x,z)
+
 
                         if abs(x-xpos) <= halfway and abs(z-zpos) <= halfway:
                              i = x - xpos + halfway
                              j = z - zpos + halfway
+                             #print("zombie location", x, z, i , j)
 
                              #had to flip i and j to match row and column to the x,z coords in malmo
                              obs[int(j)][int(i)] = 1
@@ -257,16 +259,16 @@ class World:
                 # need to fix the rotation of the observation
                 # axes of the observation are 1-d
                 # rotate it so the zombie in front of him is in front of him if we look at the matrix
-                #print("observations", obs)
+
                 # Rotate observation with orientation of agent
 
-                if yaw == 90:
+                if yaw == 270:
                     obs = np.rot90(obs, k=1)
-                elif yaw == 0:
+                elif yaw == 180:
                     obs = np.rot90(obs, k=2)
-                elif yaw == -90:
+                elif yaw == 90:
                     obs = np.rot90(obs, k=3)
-
+                #print("observation", obs)
                 break
 
 

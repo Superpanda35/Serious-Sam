@@ -22,7 +22,7 @@ class DeepQNetwork(nn.Module):
         self.n_actions = n_actions   #number of actions
 
         #create the deep learning layers
-        self.fc1 = nn.Linear(*self.input_dims,self.fc1_dims)
+        self.fc1 = nn.Linear(np.prod(self.input_dims),self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims,self.fc2_dims)
         self.fc3 = nn.Linear(self.fc2_dims,self.n_actions)
 
@@ -39,12 +39,21 @@ class DeepQNetwork(nn.Module):
     def forward(self,state):
         """
 
-        :param state:
-        :return:
+        :param state: the observation or state of the agent right now
+        :return: the probabilities associated with each of the actions
         """
+        #flatten the observation matrix
 
-        x = F.relu(self.fc1(state))
-        x = F.relu(self.fc1(x))
+        #flattening the batch -> (batch_size, obs_size, obs_size)
+        if len(state.size()) > 2:
+            obs = T.flatten(state,start_dim=1,end_dim=2)
+        else:
+            #individual observation
+            obs = T.flatten(state)
+
+
+        x = F.relu(self.fc1(obs))
+        x = F.relu(self.fc2(x))
         actions = self.fc3(x)
 
         return actions
@@ -139,6 +148,7 @@ class Agent:
         :return: an int value that maps to a action in the action space
         """
 
+
         #choose the max q-value action
         if np.random.random() > self.epsilon:
             state = T.tensor([observation]).to(self.Q_eval.device)
@@ -169,10 +179,10 @@ class Agent:
         batch_index = np.arange(self.batch_size, dtype=np.int32)
 
         #prepare the batch
-        state_batch = T.tensor(self.state_memory[batch].to(self.Q_eval.device))
-        new_state_batch = T.tensor(self.new_state_memory[batch].to(self.Q_eval.device))
-        reward_batch = T.tensor(self.reward_memory[batch].to(self.Q_eval.device))
-        terminal_batch = T.tensor(self.terminal_memory[batch].to(self.Q_eval.device))
+        state_batch = T.tensor(self.state_memory[batch]).to(self.Q_eval.device)
+        new_state_batch = T.tensor(self.new_state_memory[batch]).to(self.Q_eval.device)
+        reward_batch = T.tensor(self.reward_memory[batch]).to(self.Q_eval.device)
+        terminal_batch = T.tensor(self.terminal_memory[batch]).to(self.Q_eval.device)
 
         action_batch = self.action_memory[batch]
 
@@ -195,7 +205,8 @@ class Agent:
 
 
         #for measuring purposes return the loss
-        return loss
+
+        return loss if loss!=None else 0
 
 
 
