@@ -126,8 +126,6 @@ def main():
             # If your agent isn't registering reward you may need to increase this
             time.sleep(2)
 
-
-
             episode_step += 1
 
             #three terminal states
