@@ -79,7 +79,7 @@ class Agent:
 
         #deep q network for this agent
         self.Q_eval = DeepQNetwork(self.alpha,n_actions = n_actions,input_dims = input_dims,
-                                   fc1_dims = 256, fc2_dims = 256)
+                                   fc1_dims = 64, fc2_dims = 64)
 
         # could also use a replay buffer to store past observations
         # Init replay buffer
@@ -131,7 +131,7 @@ class Agent:
         self.mem_cntr += 1
 
 
-    def choose_action(self,observation) -> int:
+    def choose_action(self,observation,only_turn_action) -> int:
         """
 
         Select action according to e-greedy policy
@@ -147,7 +147,10 @@ class Agent:
         :param observation: the current observation from the environment
         :return: an int value that maps to a action in the action space
         """
-
+        #
+        # #in case it is at the edge of the wall, we dont want the agent to go out of the environment
+        if only_turn_action:
+            action = np.random.choice([1,2])
 
         #choose the max q-value action
         if np.random.random() > self.epsilon:
@@ -159,16 +162,19 @@ class Agent:
         else:
             action = np.random.choice(self.action_space)
 
+
         return action
 
 
     def learn(self):
         """
+        using Deep Q Network have the agent learn
+        update the Q-function
 
         """
 
         #if memory is too small, then return not much to update on our DQN
-        if self.mem_cntr < self.batch_size:
+        if self.mem_cntr <= self.batch_size:
             return
 
         self.Q_eval.optimizer.zero_grad()

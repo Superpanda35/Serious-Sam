@@ -15,12 +15,10 @@ from world import World
 
 
 # Hyperparameters
-SIZE = 16
-REWARD_DENSITY = .1
-PENALTY_DENSITY = .02
-OBS_SIZE = 7
-MAX_EPISODE_STEPS = 100
-MAX_GLOBAL_STEPS = 10000
+SIZE = 3 #half the width of the fighting box
+OBS_SIZE = 3
+MAX_EPISODE_STEPS = 50
+MAX_GLOBAL_STEPS = 50000
 REPLAY_BUFFER_SIZE = 10000
 EPSILON_DECAY = .999
 MIN_EPSILON = .1
@@ -30,7 +28,7 @@ TARGET_UPDATE = 100
 LEARNING_RATE = 1e-4
 START_TRAINING = 500
 LEARN_FREQUENCY = 1
-ZOMBIES = 5
+ZOMBIES = 1
 ACTION_DICT = {
     0: 'move 1',  # Move one block forward
     1: 'turn 1',  # Turn 90 degrees to the right
@@ -68,17 +66,16 @@ def main():
 
     # create the DQN agent
     epsilon = 1
-    #have the first layer of the DQN be the flattened size of the observation
 
     agent = Agent(alpha=LEARNING_RATE, gamma = GAMMA, epsilon = epsilon,
                   input_dims = (OBS_SIZE,OBS_SIZE),batch_size = BATCH_SIZE,
-                  n_actions = len(ACTION_DICT), max_mem_size = 100000, eps_end = MIN_EPSILON,
+                  n_actions = len(ACTION_DICT), max_mem_size = REPLAY_BUFFER_SIZE, eps_end = MIN_EPSILON,
                   eps_dec = EPSILON_DECAY)
 
 
 
     #create the Malmo world environment
-    world = World(size = SIZE, obs_size = OBS_SIZE, num_entities = 5, episodes = MAX_EPISODE_STEPS)
+    world = World(size = SIZE, obs_size = OBS_SIZE, num_entities = ZOMBIES, episodes = MAX_EPISODE_STEPS)
 
     # Init vars
     global_step = 0
@@ -98,8 +95,8 @@ def main():
 
         # Setup Malmo
         agent_host = world.init_malmo()
-
         world_state = world.get_world_state()
+
         while not world_state.has_mission_begun:
 
             time.sleep(0.1)
@@ -108,15 +105,18 @@ def main():
                 print("\nError:", error.text)
 
         #get the first observation
-        obs , zombies_count , health = world.get_observation()
+        obs , zombies_killed, health, only_turn_action = world.get_observation()
         death = False
+        total_killed = 0
+
         # Run the episode
         while world.is_mission_running:
             # print(".", end="")
             # time.sleep(0.1)
 
             # Get action
-            action_idx = agent.choose_action(obs)
+            #need to add a check that the agent doesn't attack the wall
+            action_idx = agent.choose_action(obs,only_turn_action)
             command = ACTION_DICT[action_idx]
             #print("action taken", command)
 
@@ -132,25 +132,33 @@ def main():
             # 1. if all the zombies have been killed
             # 2. the agent has lost all its health points and has died
             # 3. episode has take maximum steps
-            if zombies_count == 0 or health == 0 or episode_step >= MAX_EPISODE_STEPS:
+            if (episode_step > 10 and total_killed==ZOMBIES) or health == 0 or episode_step >= MAX_EPISODE_STEPS:
                 done = True
-                if episode_step >= MAX_EPISODE_STEPS:
+
+                if episode_step >= MAX_EPISODE_STEPS or ZOMBIES-total_killed == 0:
+                    print("sending the quit command", "zombies killed", total_killed, "reward", episode_return, "episode step", episode_step)
                     agent_host.sendCommand("quit")
+                    #since quit makes health 0, change it to any number so the reward is calculated properly
                 time.sleep(2)
 
+            #get the agent's health value
             if health == 0:
                 death = True
+
             # Get next observation
             world_state = world.get_world_state()
 
             for error in world_state.errors:
                 print("Error:", error.text)
 
-            next_obs, zombies_count, health = world.get_observation()
+
+            next_obs, zombies_killed, health, only_turn_action = world.get_observation()
+            total_killed += zombies_killed
 
             # Get reward
-            reward = world.get_reward(death, episode_steps = episode_step)
+            reward = world.get_reward(death, zombies_killed , episode_steps = episode_step)
             episode_return += reward
+            #print("reward", reward)
 
             # Store step in replay buffer
             agent.store_transition(obs,action_idx,reward, next_obs,done)

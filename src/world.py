@@ -15,10 +15,11 @@ class World:
     Create the Malmo environment for a fight arena filled with zombies
     """
 
-    def __init__(self, size, obs_size,num_entities, episodes = 100):
+    def __init__(self, size, obs_size,num_entities=5, episodes = 100):
         self.size = size
         self.obs_size = obs_size
         self.num_entities = num_entities
+        self.num_entities_copy = num_entities #copy it to make sure each mission has the right number of zombies in the beginning of each episode
         self.episodes = episodes
 
         # Create default Malmo objects:
@@ -45,7 +46,7 @@ class World:
 
         :param blocktype: the type of block wanted to put
         :param height: the height of the wall
-        :return:
+        :return: a string that represents the XML wall
         """
         genString = ""
 
@@ -71,11 +72,11 @@ class World:
 
         genString = ""
 
-        for i in range(self.num_entities):
-            x = np.random.randint(-self.size,self.size)
-            z = np.random.randint(-self.size, self.size)
+        for i in range(self.num_entities_copy):
+            x = np.random.randint(-self.size+1,self.size-1)
+            z = np.random.randint(-self.size+1, self.size-1)
+            genString +='<DrawEntity x="'+ str(x) +'" y="7" z="'+ str(z) +'" type="'+entity + '"/>'
 
-            genString+='<DrawEntity x="'+ str(x) +'" y="7" z="'+ str(z) +'" type="'+entity + '"/>'
 
         return genString
 
@@ -116,11 +117,15 @@ class World:
                             <InventoryItem slot="0" type="golden_sword"/>
                         </Inventory>
                     </AgentStart>
-
+                    
                     <AgentHandlers>
                         <RewardForDamagingEntity>
-                            <Mob type="Zombie" reward="100"/>
+                            <Mob type="Zombie" reward="1000"/>
                         </RewardForDamagingEntity>
+                        <RewardForCollectingItem>
+                            <Item type="cobblestone_wall" reward="-10"/>
+                        </RewardForCollectingItem>
+                        <MissionQuitCommands/>
                         <ObservationFromGrid>
                                 <Grid name="floorAll">
                                     <min x="-''' + str(int(self.obs_size / 2)) + '''" y="-1" z="-''' + str(
@@ -129,10 +134,12 @@ class World:
                                 </Grid>
                             </ObservationFromGrid>
                         <ObservationFromRay/>
+                        <ObservationFromFullInventory/>
                         <ObservationFromNearbyEntities>
-                            <Range name="entities" xrange="100" yrange="2" zrange="100" update_frequency="1"/>
+                            <Range name="entities" xrange="100" yrange="7" zrange="100" update_frequency="1"/>
                         </ObservationFromNearbyEntities>
-                      <ObservationFromFullStats/>
+                        <ObservationFromFullStats/>
+                        <ObservationFromDiscreteCell/>
                       <DiscreteMovementCommands/>
                       <AgentQuitFromReachingCommandQuota total="'''+str(self.episodes)+'''" />
                     </AgentHandlers>
@@ -145,9 +152,12 @@ class World:
         Initialize new malmo mission.
         """
         my_mission = MalmoPython.MissionSpec(self.GetMissionXML(), True)
+        my_mission.forceWorldReset() #so it doesn't collect any past objects
         my_mission_record = MalmoPython.MissionRecordSpec()
         my_mission.requestVideo(800, 500)
         my_mission.setViewpoint(1)
+
+        self.num_entities = self.num_entities_copy
 
         max_retries = 3
         my_clients = MalmoPython.ClientPool()
@@ -155,7 +165,7 @@ class World:
 
         for retry in range(max_retries):
             try:
-                self.agent_host.startMission(my_mission, my_clients, my_mission_record, 0, "DiamondCollector")
+                self.agent_host.startMission(my_mission, my_clients, my_mission_record, 0, "ZombieKiller")
                 break
             except RuntimeError as e:
                 if retry == max_retries - 1:
@@ -178,7 +188,8 @@ class World:
 
         return self.world_state
 
-    def get_reward(self, death, episode_steps):
+
+    def get_reward(self, death, zombies_killed, episode_steps):
         """
 
         :return: integer of the reward the agent received
@@ -187,14 +198,44 @@ class World:
         reward = 0
         for r in self.world_state.rewards:
             add = r.getValue()
-            if add == 100:
-                print("hit zombie")
             reward += add
-        if death:
-            reward += -1000
+
+        #can only have one of the two situations - it killed the zombie or it died itself
+
+        # for every step need to give agent reward so it kills zombies faster
+        #made it positive reward so it encourages the agent to stay alive longer to kill the zombies
+        #change this depending on what type of reward you want for each time step
+        if episode_steps < self.episodes:
+            reward += 0
+
+        #to ensure that if a zombie is killed we don't count any extra reward for zombies that are "off the screen"
         if episode_steps >= self.episodes:
+            reward += 0
+        #if the agent died it will lose points
+        elif death:
             reward += -100
+        # manually add the reward for killing a zombie
+        else:
+            if zombies_killed > 0:
+                print("zombie killed before time ran out", episode_steps)
+            reward += (100*zombies_killed)
+
+
         return reward
+
+    def get_wall_position(self, line_of_sight):
+        """
+
+
+        :param line_of_sight: from the observation understand where the wall is in
+        :return: if the wall is in front of the agent or not by checking what is in it's line of sight
+        """
+        if line_of_sight["type"] == "cobblestone_wall":
+            return line_of_sight["inRange"]
+
+        return False
+
+
 
 
 
@@ -211,65 +252,96 @@ class World:
         """
         #only look a obs_size by obs_sive around the agent
         obs = np.zeros((self.obs_size, self.obs_size), dtype = np.float32)
-        count = 0
+        zombies_count = 0
+        zombies_killed = 0
         life = 0
+        only_turn_action = False
 
-        while self.is_mission_running:
-            time.sleep(0.1)
-            self.world_state = self.get_world_state()
-            if len(self.world_state.errors) > 0:
-                raise AssertionError('Could not load grid.')
+        try:
+            while self.is_mission_running:
+                time.sleep(0.1)
+                self.world_state = self.get_world_state()
+                self.is_mission_running = self.world_state.is_mission_running
+                if len(self.world_state.errors) > 0:
+                    raise AssertionError('Could not load grid.')
 
-            if self.world_state.number_of_observations_since_last_state > 0:
-                # First we get the json from the observation API
-                msg = self.world_state.observations[-1].text
-                observations = json.loads(msg)
-                #print("observations", observations)
-                #print("observations full stats", observations[u'Life'])
-
-                # current location of the agent
-                # which will be center of the observation matrix
-                xpos, ypos, zpos = observations[u'XPos'], observations[u'YPos'], observations[u'ZPos']
-                yaw = observations[u'Yaw']
-                life = observations[u'Life']
-                #print("current", xpos,zpos, yaw)
-
-                halfway = self.obs_size//2
-
-                # Get observation with location of all the zombies
-                entities = observations[u'entities']
-                #print("entitites", entities)
-                for e in entities:
-
-                    if e['name'] == 'Zombie':
-                        count += 1
-                        x = int(e['x'])
-                        z = int(e['z'])
+                if self.world_state.number_of_observations_since_last_state > 0:
+                    # First we get the json from the observation API
+                    msg = self.world_state.observations[-1].text
+                    observations = json.loads(msg)
+                    #print("observations", observations)
 
 
-                        if abs(x-xpos) <= halfway and abs(z-zpos) <= halfway:
-                             i = x - xpos + halfway
-                             j = z - zpos + halfway
-                             #print("zombie location", x, z, i , j)
+                    # current location of the agent
+                    # which will be center of the observation matrix
 
-                             #had to flip i and j to match row and column to the x,z coords in malmo
-                             obs[int(j)][int(i)] = 1
-
-
-                # need to fix the rotation of the observation
-                # axes of the observation are 1-d
-                # rotate it so the zombie in front of him is in front of him if we look at the matrix
-
-                # Rotate observation with orientation of agent
-
-                if yaw == 270:
-                    obs = np.rot90(obs, k=1)
-                elif yaw == 180:
-                    obs = np.rot90(obs, k=2)
-                elif yaw == 90:
-                    obs = np.rot90(obs, k=3)
-                #print("observation", obs)
-                break
+                    xpos, ypos, zpos = observations[u'XPos'], observations[u'YPos'], observations[u'ZPos']
+                    yaw = observations[u'Yaw']
+                    life = observations[u'Life']
 
 
-        return obs,count,life
+
+
+
+                    #print("current", xpos, zpos, yaw, only_turn_action)
+
+                    # check that the agent is not next to the wall and facing the wall
+                    # we don't want to attack the wall
+                    if xpos == self.size and yaw == 90:
+                        only_turn_action = True
+                    elif xpos == (-1*self.size) and yaw == 270:
+                        only_turn_action = True
+                    elif ypos == self.size and yaw == 0:
+                        only_turn_action = True
+                    elif ypos == (-1*self.size) and yaw == 180:
+                        only_turn_action = True
+
+                    if observations["InventorySlot_1_size"] > 0:
+                        print("attacked the wall","current positiion", xpos, zpos, "yaw", yaw)
+
+
+                    halfway = self.obs_size//2
+
+                    # Get observation with location of all the zombies
+                    entities = observations[u'entities']
+                    for e in entities:
+
+                        if e[u'name'] == 'Zombie':
+                            zombies_count += 1
+                            x = int(e['x'])
+                            z = int(e['z'])
+
+
+                            if abs(x-xpos) <= halfway and abs(z-zpos) <= halfway:
+                                 i = x - xpos + halfway
+                                 j = z - zpos + halfway
+
+                                 #had to flip i and j to match row and column to the x,z coords in malmo
+                                 obs[int(j)][int(i)] = 1
+
+
+                    # Rotate observation with orientation of agent
+                    # 180 is the yaw direction that we are looking at
+                    #        180
+                    #   90    +    270
+                    #         0
+                    if yaw == 270:
+                        obs = np.rot90(obs, k=3)
+                    elif yaw == 0:
+                        obs = np.rot90(obs, k=2)
+                    elif yaw == 90:
+                        obs = np.rot90(obs, k=1)
+                    break
+            # calculate the amount of zombies that have been killed
+            zombies_killed = self.num_entities - zombies_count
+            self.num_entities = zombies_count
+
+        except Exception as e:
+            print("error inside observation", e)
+            print(obs, zombies_killed, life, only_turn_action)
+            return obs, zombies_killed, life, only_turn_action
+
+
+
+
+        return obs, zombies_killed, life, only_turn_action
