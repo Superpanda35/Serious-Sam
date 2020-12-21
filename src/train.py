@@ -17,7 +17,7 @@ from world import World
 # Hyperparameters
 SIZE = 3 #half the width of the fighting box
 OBS_SIZE = 3
-MAX_EPISODE_STEPS = 50
+MAX_EPISODE_STEPS = 80
 MAX_GLOBAL_STEPS = 50000
 REPLAY_BUFFER_SIZE = 10000
 EPSILON_DECAY = .999
@@ -105,7 +105,7 @@ def main():
                 print("\nError:", error.text)
 
         #get the first observation
-        obs , zombies_killed, health, only_turn_action = world.get_observation()
+        obs , zombies_killed, health = world.get_observation()
         death = False
         total_killed = 0
 
@@ -116,7 +116,7 @@ def main():
 
             # Get action
             #need to add a check that the agent doesn't attack the wall
-            action_idx = agent.choose_action(obs,only_turn_action)
+            action_idx = agent.choose_action(obs)
             command = ACTION_DICT[action_idx]
             #print("action taken", command)
 
@@ -152,7 +152,7 @@ def main():
                 print("Error:", error.text)
 
 
-            next_obs, zombies_killed, health, only_turn_action = world.get_observation()
+            next_obs, zombies_killed, health= world.get_observation()
             total_killed += zombies_killed
 
             # Get reward
@@ -177,6 +177,7 @@ def main():
 
 
         num_episode += 1
+        zombies_killed  = 0
         returns.append(episode_return)
         steps.append(global_step)
         avg_return = sum(returns[-min(len(returns), 10):]) / min(len(returns), 10)

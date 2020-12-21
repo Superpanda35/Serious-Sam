@@ -131,7 +131,7 @@ class Agent:
         self.mem_cntr += 1
 
 
-    def choose_action(self,observation,only_turn_action) -> int:
+    def choose_action(self,observation) -> int:
         """
 
         Select action according to e-greedy policy
@@ -147,10 +147,7 @@ class Agent:
         :param observation: the current observation from the environment
         :return: an int value that maps to a action in the action space
         """
-        #
-        # #in case it is at the edge of the wall, we dont want the agent to go out of the environment
-        if only_turn_action:
-            action = np.random.choice([1,2])
+
 
         #choose the max q-value action
         if np.random.random() > self.epsilon:

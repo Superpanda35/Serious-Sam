@@ -7,6 +7,7 @@ import sys
 import time
 import json
 import numpy as np
+import math
 
 
 
@@ -39,6 +40,7 @@ class World:
 
         self.world_state = self.agent_host.getWorldState()
         self.is_mission_running = self.world_state.is_mission_running
+        self.cobblestone_wall = 0
 
 
     def drawWall(self,blocktype, height) -> str:
@@ -123,7 +125,7 @@ class World:
                             <Mob type="Zombie" reward="1000"/>
                         </RewardForDamagingEntity>
                         <RewardForCollectingItem>
-                            <Item type="cobblestone_wall" reward="-10"/>
+                            <Item type="cobblestone_wall" reward="-500"/>
                         </RewardForCollectingItem>
                         <MissionQuitCommands/>
                         <ObservationFromGrid>
@@ -174,6 +176,7 @@ class World:
                 else:
                     time.sleep(2)
 
+        self.cobblestone_wall = 0
         return self.agent_host
 
 
@@ -205,22 +208,24 @@ class World:
         # for every step need to give agent reward so it kills zombies faster
         #made it positive reward so it encourages the agent to stay alive longer to kill the zombies
         #change this depending on what type of reward you want for each time step
-        if episode_steps < self.episodes:
-            reward += 0
+        # if episode_steps < self.episodes:
+        #     reward += 0
 
         #to ensure that if a zombie is killed we don't count any extra reward for zombies that are "off the screen"
         if episode_steps >= self.episodes:
-            reward += 0
+            reward += -100
         #if the agent died it will lose points
         elif death:
             reward += -100
         # manually add the reward for killing a zombie
         else:
+            #for debugging
             if zombies_killed > 0:
                 print("zombie killed before time ran out", episode_steps)
+
             reward += (100*zombies_killed)
 
-
+        if reward !=0 : print("reward just collected",reward)
         return reward
 
     def get_wall_position(self, line_of_sight):
@@ -255,7 +260,6 @@ class World:
         zombies_count = 0
         zombies_killed = 0
         life = 0
-        only_turn_action = False
 
         try:
             while self.is_mission_running:
@@ -279,25 +283,6 @@ class World:
                     yaw = observations[u'Yaw']
                     life = observations[u'Life']
 
-
-
-
-
-                    #print("current", xpos, zpos, yaw, only_turn_action)
-
-                    # check that the agent is not next to the wall and facing the wall
-                    # we don't want to attack the wall
-                    if xpos == self.size and yaw == 90:
-                        only_turn_action = True
-                    elif xpos == (-1*self.size) and yaw == 270:
-                        only_turn_action = True
-                    elif ypos == self.size and yaw == 0:
-                        only_turn_action = True
-                    elif ypos == (-1*self.size) and yaw == 180:
-                        only_turn_action = True
-
-                    if observations["InventorySlot_1_size"] > 0:
-                        print("attacked the wall","current positiion", xpos, zpos, "yaw", yaw)
 
 
                     halfway = self.obs_size//2
@@ -332,16 +317,17 @@ class World:
                     elif yaw == 90:
                         obs = np.rot90(obs, k=1)
                     break
+
             # calculate the amount of zombies that have been killed
             zombies_killed = self.num_entities - zombies_count
             self.num_entities = zombies_count
 
         except Exception as e:
             print("error inside observation", e)
-            print(obs, zombies_killed, life, only_turn_action)
-            return obs, zombies_killed, life, only_turn_action
+            print(obs, zombies_killed, life)
+            return obs, zombies_killed, life
 
 
 
 
-        return obs, zombies_killed, life, only_turn_action
+        return obs, zombies_killed, life
