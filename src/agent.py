@@ -46,10 +46,10 @@ class DeepQNetwork(nn.Module):
 
         #flattening the batch -> (batch_size, obs_size, obs_size)
         if len(state.size()) > 2:
-            obs = T.flatten(state,start_dim=1,end_dim=2)
+            obs = T.flatten(state,start_dim=1,end_dim=3).float()
         else:
             #individual observation
-            obs = T.flatten(state)
+            obs = T.flatten(state).float()
 
 
         x = F.relu(self.fc1(obs))

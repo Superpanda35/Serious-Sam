@@ -15,12 +15,12 @@ from world import World
 
 
 # Hyperparameters
-SIZE = 3 #half the width of the fighting box
-OBS_SIZE = 3
+SIZE = 4 #half the width of the fighting box
+OBS_SIZE = 5
 MAX_EPISODE_STEPS = 80
 MAX_GLOBAL_STEPS = 50000
 REPLAY_BUFFER_SIZE = 10000
-EPSILON_DECAY = .999
+EPSILON_DECAY = .99
 MIN_EPSILON = .1
 BATCH_SIZE = 128
 GAMMA = .9
@@ -68,7 +68,7 @@ def main():
     epsilon = 1
 
     agent = Agent(alpha=LEARNING_RATE, gamma = GAMMA, epsilon = epsilon,
-                  input_dims = (OBS_SIZE,OBS_SIZE),batch_size = BATCH_SIZE,
+                  input_dims = (9,OBS_SIZE,OBS_SIZE),batch_size = BATCH_SIZE,
                   n_actions = len(ACTION_DICT), max_mem_size = REPLAY_BUFFER_SIZE, eps_end = MIN_EPSILON,
                   eps_dec = EPSILON_DECAY)
 
@@ -105,7 +105,8 @@ def main():
                 print("\nError:", error.text)
 
         #get the first observation
-        obs , zombies_killed, health = world.get_observation()
+        endGame = False
+        obs , zombies_killed, health,endGame,blocks = world.get_observation()
         death = False
         total_killed = 0
 
@@ -132,10 +133,11 @@ def main():
             # 1. if all the zombies have been killed
             # 2. the agent has lost all its health points and has died
             # 3. episode has take maximum steps
-            if (episode_step > 10 and total_killed==ZOMBIES) or health == 0 or episode_step >= MAX_EPISODE_STEPS:
+            #sometimes the episode gets error in which case i rather end it than continue getting wrong results
+            if endGame or (episode_step > 10 and total_killed==ZOMBIES) or health == 0 or episode_step >= MAX_EPISODE_STEPS:
                 done = True
 
-                if episode_step >= MAX_EPISODE_STEPS or ZOMBIES-total_killed == 0:
+                if episode_step >= MAX_EPISODE_STEPS or ZOMBIES-total_killed == 0 or endGame:
                     print("sending the quit command", "zombies killed", total_killed, "reward", episode_return, "episode step", episode_step)
                     agent_host.sendCommand("quit")
                     #since quit makes health 0, change it to any number so the reward is calculated properly
@@ -152,11 +154,11 @@ def main():
                 print("Error:", error.text)
 
 
-            next_obs, zombies_killed, health= world.get_observation()
+            next_obs, zombies_killed, health, endGame,blocks = world.get_observation()
             total_killed += zombies_killed
 
             # Get reward
-            reward = world.get_reward(death, zombies_killed , episode_steps = episode_step)
+            reward = world.get_reward(death, zombies_killed , blocks,episode_steps = episode_step)
             episode_return += reward
             #print("reward", reward)
 

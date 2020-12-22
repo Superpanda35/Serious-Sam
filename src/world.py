@@ -124,9 +124,6 @@ class World:
                         <RewardForDamagingEntity>
                             <Mob type="Zombie" reward="1000"/>
                         </RewardForDamagingEntity>
-                        <RewardForCollectingItem>
-                            <Item type="cobblestone_wall" reward="-500"/>
-                        </RewardForCollectingItem>
                         <MissionQuitCommands/>
                         <ObservationFromGrid>
                                 <Grid name="floorAll">
@@ -192,7 +189,7 @@ class World:
         return self.world_state
 
 
-    def get_reward(self, death, zombies_killed, episode_steps):
+    def get_reward(self, death, zombies_killed, blocks, episode_steps):
         """
 
         :return: integer of the reward the agent received
@@ -210,10 +207,14 @@ class World:
         #change this depending on what type of reward you want for each time step
         # if episode_steps < self.episodes:
         #     reward += 0
+        if blocks:
+            print("attacked a block get reward")
+            reward += (-500*blocks)
 
         #to ensure that if a zombie is killed we don't count any extra reward for zombies that are "off the screen"
         if episode_steps >= self.episodes:
-            reward += -100
+            reward += 0
+
         #if the agent died it will lose points
         elif death:
             reward += -100
@@ -223,10 +224,11 @@ class World:
             if zombies_killed > 0:
                 print("zombie killed before time ran out", episode_steps)
 
-            reward += (100*zombies_killed)
+            reward += (1000*zombies_killed)
 
         if reward !=0 : print("reward just collected",reward)
         return reward
+
 
     def get_wall_position(self, line_of_sight):
         """
@@ -256,10 +258,12 @@ class World:
             observation: a 2d array
         """
         #only look a obs_size by obs_sive around the agent
-        obs = np.zeros((self.obs_size, self.obs_size), dtype = np.float32)
+        obs = np.zeros((9,self.obs_size, self.obs_size), dtype = np.float32)
         zombies_count = 0
         zombies_killed = 0
         life = 0
+        endGame = False
+        blocks = 0
 
         try:
             while self.is_mission_running:
@@ -275,6 +279,11 @@ class World:
                     observations = json.loads(msg)
                     #print("observations", observations)
 
+                    #grid binary if th zombie is next to the wall we want it to learn that
+                    grid = observations['floorAll']
+                    grid_binary = [1 if x == 'cobblestone_wall' else 0 for x in grid]
+                    obs = np.reshape(grid_binary, (9,self.obs_size, self.obs_size))
+                    #print(obs)
 
                     # current location of the agent
                     # which will be center of the observation matrix
@@ -284,8 +293,16 @@ class World:
                     life = observations[u'Life']
 
 
-
                     halfway = self.obs_size//2
+
+                    blocks = 0
+                    for i in range(10):
+
+                        if observations[u"InventorySlot_"+str(i)+"_item"] == "cobblestone_wall":
+                            blocks = observations['InventorySlot_'+str(i)+'_size']
+                            blocks = blocks - self.cobblestone_wall
+                            self.cobblestone_wall += blocks
+                            break
 
                     # Get observation with location of all the zombies
                     entities = observations[u'entities']
@@ -295,28 +312,32 @@ class World:
                             zombies_count += 1
                             x = int(e['x'])
                             z = int(e['z'])
-
+                            y = e['y']
 
                             if abs(x-xpos) <= halfway and abs(z-zpos) <= halfway:
                                  i = x - xpos + halfway
                                  j = z - zpos + halfway
 
+
                                  #had to flip i and j to match row and column to the x,z coords in malmo
-                                 obs[int(j)][int(i)] = 1
+                                 obs[int(y)+1][int(j)][int(i)] = 2
 
 
                     # Rotate observation with orientation of agent
                     # 180 is the yaw direction that we are looking at
                     #        180
-                    #   90    +    270
+                    #   270   +   90
                     #         0
                     if yaw == 270:
-                        obs = np.rot90(obs, k=3)
+                        obs = np.rot90(obs, k=1, axes=(1, 2))
                     elif yaw == 0:
-                        obs = np.rot90(obs, k=2)
+                        obs = np.rot90(obs, k=2, axes=(1, 2))
                     elif yaw == 90:
-                        obs = np.rot90(obs, k=1)
+                        obs = np.rot90(obs, k=3, axes=(1, 2))
+
+                    #print(obs)
                     break
+
 
             # calculate the amount of zombies that have been killed
             zombies_killed = self.num_entities - zombies_count
@@ -324,10 +345,11 @@ class World:
 
         except Exception as e:
             print("error inside observation", e)
-            print(obs, zombies_killed, life)
-            return obs, zombies_killed, life
+            print(obs, zombies_killed, life,blocks)
+            endGame = True
+            return obs, zombies_killed, life, endGame,blocks
 
 
 
 
-        return obs, zombies_killed, life
+        return obs, zombies_killed, life, endGame, blocks
